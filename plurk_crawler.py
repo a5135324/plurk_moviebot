@@ -39,6 +39,10 @@ class PlurkUser(object):
         temp = plurk.callAPI('/APP/Responses/responseAdd', options={'plurk_id': plurk_id, 'content': content, 'qualifier': qualifier})
         return temp
 
+    def del_response(self, response_id, plurk_id):
+        temp = plurk.callAPI('/APP/Responses/responseDelete', options={'response_id': response_id, 'plurk_id': plurk_id})
+        return temp
+
 def get_anonymous_plurks(offset = 0, limit = 10):
     r = requests.get('https://www.plurk.com/Stats/getAnonymousPlurks?lang=zh&offset=' + offset.__str__() + '&limit=' + limit.__str__())
     plurk_id = json.dumps(json.loads(r.text)["pids"], ensure_ascii=False, indent=4)
@@ -68,12 +72,10 @@ def yahoo_movie_parser():
     #print(newMovie4)
     release_time = [t.find('div', class_ = 'release_movie_time').text for t in newMovie4]
     #print(release_time)
-    '''
-    newMovie4 = soup.find_all('div',class_="release_text")
+    #newMovie4 = soup.find_all('div',class_="release_text")
     #print(newMovie4)
-    Intros = [t.find('span').text.replace('\n','').replace('\r','').replace('\xa0','').replace(' ','') for t in newMovie4]
+    #Intros = [t.find('span').text.replace('\n','').replace('\r','').replace('\xa0','').replace(' ','') for t in newMovie4]
     #print(Intros)
-    '''
     df = pd.DataFrame(
     {
         'Name':NameCHs,
@@ -81,8 +83,8 @@ def yahoo_movie_parser():
         'ReTime': release_time,
         'Trailer': links
     })
-    print(df['Trailer'])
-    
+    #print(df['Trailer'][0])
+    print(df)
 
 def main():
     global plurk
@@ -94,15 +96,14 @@ def main():
     plurks.get_information(ids[0])
     '''
 
-    plurk = PlurkAPI.fromfile('key/API.keys')
-    author = PlurkUser()
+    #plurk = PlurkAPI.fromfile('key/API.keys')
+    #author = PlurkUser()
     #temp = author.add_plurk('本週上映電影')
     #print(temp['plurk_id'])
     # 1420558413
-    plurk.callAPI('/APP/Responses/responseAdd', options={'plurk_id': '1420558413', 'content': 'test\ntest', 'qualifier':''})
+    #plurk.callAPI('/APP/Responses/responseAdd', options={'plurk_id': '1420558413', 'content': 'test\ntest', 'qualifier':''})
 
-    
-    #yahoo_movie_parser()
+    yahoo_movie_parser()
 
 if __name__ == '__main__':
     main()
