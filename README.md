@@ -1,4 +1,4 @@
-# Plurk 偷偷說爬蟲
+# Plurk Bot
 
 Plurk API用法：https://www.plurk.com/API
 
