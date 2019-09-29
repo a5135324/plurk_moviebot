@@ -11,8 +11,8 @@ class PlurkUser(object):
         temp = plurk.callAPI('/APP/Users/me')
         self.user_id = temp["id"]
 
-    def add_plurk(self, content, qualifier = ''):
-        temp = plurk.callAPI('/APP/Timeline/plurkAdd', options={'content': content, 'qualifier': qualifier})
+    def add_plurk(self, content, qualifier = '', limited_to = ''):
+        temp = plurk.callAPI('/APP/Timeline/plurkAdd', options={'content': content, 'qualifier': qualifier, 'limited_to': limited_to })
         return temp
 
     def del_plurk(self, plurk_id):
@@ -28,7 +28,7 @@ def message_format(plurk_id, ch, en, rel_time, intro, links):
         time.sleep(5)
         content = '電影名稱 ： **' + ch[t] + '** (' + en[t] + ')\n' + rel_time[t] + '\n電影簡介 ： ' + intro[t][:200] + '\n' + links[t]
         print(content)
-        print(plurk_id)
+        #print(plurk_id)
         temp = plurk.callAPI('/APP/Responses/responseAdd', options={'plurk_id': plurk_id, 'content': content, 'qualifier':''})
         print(temp)
         #print(content)
@@ -92,6 +92,8 @@ def get_next_page(url):
     r = requests.get(url)
     soup = BeautifulSoup(r.text,'html.parser')
     pageInfo = soup.find('div', class_ = 'page_numbox')
+    if pageInfo == None:
+        return None
     tagA = pageInfo.find('li', class_ = 'nexttxt').find('a')
     if tagA:
         return tagA['href']
@@ -99,10 +101,12 @@ def get_next_page(url):
         return None
 
 def post_movie():
-    temp = author.add_plurk('本週上映電影','says')
+    temp = author.add_plurk('#movie #電影\n本週上映電影','says')
     plurk_id = temp['plurk_id']
     print(plurk_id)
-    #plurk_id = 0
+    #temp = author.add_plurk('#test test message', 'says', '[15240921]')
+    #print(temp['plurk_id'])
+    #plurk_id = temp['plurk_id']
 
     url = 'https://movies.yahoo.com.tw/movie_thisweek.html'
     url_list = []
@@ -121,12 +125,12 @@ def main():
     plurk = PlurkAPI.fromfile('key/API.keys')
     author = PlurkUser()
     #post_movie()
-
+    
     while True:
         if (datetime.date.today().isoweekday()) == 7 and (datetime.datetime.now().hour) == 16 and (datetime.datetime.now().minute) == 12 and (datetime.datetime.now().second) == 0:
             post_movie()
         else:
-            #time.sleep(0.5)
+            time.sleep(0.5)
             pass
         if (datetime.datetime.now().second) == 0:
             plurk.callAPI('/APP/Alerts/addAllAsFriends')
