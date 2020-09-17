@@ -10,26 +10,38 @@ import json
 import ast
 
 def get_db_ids():
-    db_ids = []
     doc = conn.plurk.anonymous.find(
         {},
         {"_id": 0, "id": 1}
     )
 
-    for x in doc:
-        db_ids.append(x['id'])
-
+    db_ids = [x['id'] for x in doc]
     return db_ids
 
-def get_response(plurk_id, from_response_id = 0):
+def dump_db(db, collection, filename):
+    doc = conn[db][collection].find({})
+
+    with open(filename, 'w', encoding='utf-8') as w:
+        w.write('[')
+        for x in doc:
+            w.write(json.dumps(x, ensure_ascii=False))
+            w.write(',')
+        w.write(']')
+
+def get_responses(plurk_id, from_response_id = 0):
     url = 'https://www.plurk.com/Responses/get'
+    post_data = {"plurk_id": plurk_id, "from_response_id": from_response_id}
+    r = requests.post(url, data = post_data)
+    if r.status_code == 400:
+        logging.info('ID: {} get some error!'.format(plurk_id))
 
 def get_anonymous_plurks(offset = 0, limit = 100):
     db_ids = get_db_ids()
 
     r = requests.get('https://www.plurk.com/Stats/getAnonymousPlurks?lang=zh&offset={}&limit={}'.format(offset, limit))
     data = json.loads(r.text)
-    for plurk_id in data['pids']:
+    pids = data["pids"]
+    for plurk_id in pids:
         str_id = str(plurk_id)
         data[str_id]["_id"] = plurk_id
         sha1 = hashlib.sha1(str(data[str_id]).encode('utf-8')).hexdigest()
@@ -52,15 +64,13 @@ def get_anonymous_plurks(offset = 0, limit = 100):
             doc = conn.plurk.anonymous.insert_one(data[str_id])
             logging.info(doc.inserted_id)
     
-    pids = json.dumps(json.loads(r.text)["pids"], ensure_ascii = False, indent=4)
     return pids
 
 def main():
     id_list = get_anonymous_plurks()
     for _ in range(10000):
-        ids = ast.literal_eval(id_list)
-        if ids:
-            min_number = min(ids)
+        if id_list:
+            min_number = min(id_list)
             id_list = get_anonymous_plurks(min_number)
         else:
             logging.info('No other plurks!')
