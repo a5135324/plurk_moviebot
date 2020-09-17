@@ -1,6 +1,11 @@
 /key/*
+/env/*
 /plurk/*
+/.vscode/*
 /plurk_env/*
 /__pycache__/*
 *.log
 *.sh
+
+Plan.md
+test.py
