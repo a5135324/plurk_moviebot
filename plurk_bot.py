@@ -30,7 +30,7 @@ def message_format(plurk_id, ch, en, rel_time, intro, links):
         print(content)
         #print(plurk_id)
         temp = plurk.callAPI('/APP/Responses/responseAdd', options={'plurk_id': plurk_id, 'content': content, 'qualifier':''})
-        print(temp)
+        #print(temp)
         #print(content)
 
 def yahoo_movie_parser(url, plurk_id):
@@ -70,6 +70,7 @@ def yahoo_movie_parser(url, plurk_id):
     for t in movie_intro:
         temp = t.find('span').text.replace('\r\n','').replace('\n','')
         #time.sleep(5)
+        check = temp
         while True:
             a = temp.find('★')
             if a == -1:
@@ -80,6 +81,10 @@ def yahoo_movie_parser(url, plurk_id):
                 temp = temp.replace(temp[a:b], '', 1)
             else:
                 temp = temp.replace(temp[b:a],'',1)
+            if check == temp:
+                break
+            else:
+                check = temp
             #print(temp)
         
         #print(temp)
@@ -101,12 +106,13 @@ def get_next_page(url):
         return None
 
 def post_movie():
-    temp = author.add_plurk('#movie #電影\n本週上映電影','says')
+    temp = author.add_plurk('#movie #電影 #本週上映電影\n如果有出錯或是任何問題歡迎填[表單](https://forms.gle/EpDjFGGXouFVTiNk6)哦！','says')
     plurk_id = temp['plurk_id']
-    print(plurk_id)
+    #print(plurk_id)
     #temp = author.add_plurk('#test test message', 'says', '[15240921]')
     #print(temp['plurk_id'])
     #plurk_id = temp['plurk_id']
+    #plurk_id = 0
 
     url = 'https://movies.yahoo.com.tw/movie_thisweek.html'
     url_list = []
@@ -127,13 +133,16 @@ def main():
     #post_movie()
     
     while True:
-        if (datetime.date.today().isoweekday()) == 7 and (datetime.datetime.now().hour) == 16 and (datetime.datetime.now().minute) == 12 and (datetime.datetime.now().second) == 0:
+        if (datetime.date.today().isoweekday()) == 7 and (datetime.datetime.now().hour) == 16 and (datetime.datetime.now().minute) == 10:
+            time.sleep(30)
             post_movie()
         else:
             time.sleep(0.5)
-            pass
         if (datetime.datetime.now().second) == 0:
-            plurk.callAPI('/APP/Alerts/addAllAsFriends')
+            try:
+                plurk.callAPI('/APP/Alerts/addAllAsFriends')
+            except:
+                print('error when add friends')
 
 if __name__ == '__main__':
     main()
