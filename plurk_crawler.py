@@ -1,7 +1,5 @@
 from __future__ import unicode_literals
 from plurk_oauth import PlurkAPI
-from bs4 import BeautifulSoup
-import pandas as pd
 import pymongo
 import requests
 import hashlib
@@ -17,6 +15,34 @@ def get_db_ids():
 
     db_ids = [x['id'] for x in doc]
     return db_ids
+
+def convert_link_to_id(link):
+    order = '0123456789abcdefghijklmnopqrstuvwxyz'
+    pid = 0
+    if link.find('/p/') != -1:
+        sub_link = link.split('/p/')[1]
+
+        for i in sub_link:
+            pos = order.find(i)
+            pid = pid * 36 + pos
+
+    return pid
+
+def convert_id_to_link(_id):
+    try:
+        _id = int(_id)
+    except:
+        return "Error!"
+    
+    order = '0123456789abcdefghijklmnopqrstuvwxyz'
+    link = []
+    while _id:
+        _, mod = divmod(_id, 36)
+        link.append(order[int(mod)])
+        _id = (_id-mod) / 36
+    link.reverse()
+
+    return 'https://www.plurk.com/p/' + ''.join(link)
 
 def dump_db(db, collection, filename):
     doc = conn[db][collection].find({})
