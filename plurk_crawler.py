@@ -116,7 +116,9 @@ def crawler_plurk(start, end):
                             break
                         else:
                             conn.plurk.users.delete_one({"_id": users[i]['id']})
+                            users[i]["sha1"] = sha1
                             conn.plurk.users.insert_one(users[i])
+                        
                 else:
                     users[i]["_id"] = users[i]['id']
                     sha1 = hashlib.sha1(str(users[i]).encode('utf-8')).hexdigest()
@@ -137,6 +139,7 @@ def crawler_plurk(start, end):
                         break
                     else:
                         conn.plurk.all_plurks.delete_one({"_id": plurk_main['plurk_id']})
+                        plurk_main["sha1"] = sha1
                         conn.plurk.all_plurks.insert_one(plurk_main)
             else:
                 plurk_main["_id"] = plurk_main['plurk_id']
