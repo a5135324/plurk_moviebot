@@ -172,36 +172,6 @@ def crawler_plurk(plurk_id):
     
     print('ID: {} finished!'.format(plurk_id))
 
-def get_response(plurk_id, from_response_id = 0):
-    print("Starting crawling the responses of ID: {}".format(plurk_id))
-    url = 'https://www.plurk.com/Responses/get'
-    post_data = {"plurk_id": plurk_id, "from_response_id": from_response_id}
-    r = requests.post(url, data = post_data)
-    if r.status_code == 400:
-        #logging.info('ID: {} get some error! Error message is {}'.format(plurk_id, r.text))
-        return "404"
-    
-    data = json.loads(r.text)
-    if 'responses' in data.keys():
-        for i in data['responses']:
-            db_ids = get_db_ids('plurk', 'responses')
-            i["_id"] = i["id"]
-            sha1 = hashlib.sha1(str(i).encode('utf-8')).hexdigest()
-            if i['id'] in db_ids:
-                doc = conn.plurk.responses.find({"_id": i["id"]}, {"_id":0, "id": 1, "sha1": 1})
-                for x in doc:
-                    if sha1 == x['sha1']:
-                        break
-                    else:
-                        conn.plurk.responses.delete_one({"_id": i["id"]})
-                        i['sha1'] = sha1
-                        conn.plurk.responses.insert_one(i)
-            else:
-                i['sha1'] = sha1
-                conn.plurk.responses.insert_one(i)
-    
-    print('ID: {} finished!'.format(plurk_id))
-
 def main():
     if len(sys.argv) == 2:
         if sys.argv[1] == 'responses':
