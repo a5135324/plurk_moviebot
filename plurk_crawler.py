@@ -6,6 +6,7 @@ import hashlib
 import logging
 import json
 import ast
+import sys
 
 def get_db_ids(db, collection):
     doc = conn[db][collection].find({},{"_id": 1})
@@ -50,12 +51,35 @@ def dump_db(db, collection, filename):
             w.write(',')
         w.write(']')
 
-def get_responses(plurk_id, from_response_id = 0):
+def crawler_responses(plurk_id, from_response_id = 0):
+    print("Starting crawling the responses of ID: {}".format(plurk_id))
     url = 'https://www.plurk.com/Responses/get'
     post_data = {"plurk_id": plurk_id, "from_response_id": from_response_id}
     r = requests.post(url, data = post_data)
     if r.status_code == 400:
-        logging.info('ID: {} get some error!'.format(plurk_id))
+        #logging.info('ID: {} get some error! Error message is {}'.format(plurk_id, r.text))
+        return "404"
+    
+    data = json.loads(r.text)
+    if 'responses' in data.keys():
+        for i in data['responses']:
+            db_ids = get_db_ids('plurk', 'responses')
+            i["_id"] = i["id"]
+            sha1 = hashlib.sha1(str(i).encode('utf-8')).hexdigest()
+            if i['id'] in db_ids:
+                doc = conn.plurk.responses.find({"_id": i["id"]}, {"_id":0, "id": 1, "sha1": 1})
+                for x in doc:
+                    if sha1 == x['sha1']:
+                        break
+                    else:
+                        conn.plurk.responses.delete_one({"_id": i["id"]})
+                        i['sha1'] = sha1
+                        conn.plurk.responses.insert_one(i)
+            else:
+                i['sha1'] = sha1
+                conn.plurk.responses.insert_one(i)
+    
+    print('ID: {} finished!'.format(plurk_id))
 
 def get_anonymous_plurks(offset = 0, limit = 100):
     db_ids = get_db_ids('plurk', 'anonymous')
@@ -88,66 +112,65 @@ def get_anonymous_plurks(offset = 0, limit = 100):
     
     return pids
 
-def crawler_plurk(start, end):
-    for j in range(start, end, 1):
-        print("Starting crawling ID: {}".format(j))
-        data = api.callAPI('/APP/Timeline/getPlurk', options={'plurk_id': j})
+def crawler_plurk(plurk_id):
+    print("Starting crawling ID: {}".format(plurk_id))
+    data = api.callAPI('/APP/Timeline/getPlurk', options={'plurk_id': plurk_id})
 
-        if not data:
-            print("ID: {} no data".format(j))
-            continue
+    if not data:
+        print("ID: {} no data".format(plurk_id))
+        return
 
-        if 'error_text' in data.keys():
-            print("ID: {} got some error, error_text is {}".format(j, data['error_text']))
-            continue
-        
-        if 'plurk_users' in data.keys():
-            user_ids = get_db_ids('plurk', 'users')
-            users = data['plurk_users']
+    if 'error_text' in data.keys():
+        print("ID: {} got some error, error_text is {}".format(plurk_id, data['error_text']))
+        return
+    
+    if 'plurk_users' in data.keys():
+        user_ids = get_db_ids('plurk', 'users')
+        users = data['plurk_users']
 
-            for i in users:
-                if users[i]['id'] in user_ids:
-                    users[i]["_id"] = users[i]['id']
-                    sha1 = hashlib.sha1(str(users[i]).encode('utf-8')).hexdigest()
+        for i in users:
+            if users[i]['id'] in user_ids:
+                users[i]["_id"] = users[i]['id']
+                sha1 = hashlib.sha1(str(users[i]).encode('utf-8')).hexdigest()
 
-                    doc = conn.plurk.users.find({"_id": users[i]['_id']}, {"_id": 0, "id": 1, "sha1": 1})
-                    for x in doc:
-                        if sha1 == x['sha1']:
-                            break
-                        else:
-                            conn.plurk.users.delete_one({"_id": users[i]['id']})
-                            users[i]["sha1"] = sha1
-                            conn.plurk.users.insert_one(users[i])
-                        
-                else:
-                    users[i]["_id"] = users[i]['id']
-                    sha1 = hashlib.sha1(str(users[i]).encode('utf-8')).hexdigest()
-                    users[i]["sha1"] = sha1
-                    conn.plurk.users.insert_one(users[i])
-
-        if 'plurk' in data.keys():
-            plurk_ids = get_db_ids('plurk', 'all_plurks')
-            plurk_main = data['plurk']
-
-            if plurk_main['plurk_id'] in plurk_ids:
-                plurk_main["_id"] = plurk_main['plurk_id']
-                sha1 = hashlib.sha1(str(plurk_main).encode('utf-8')).hexdigest()
-
-                doc = conn.plurk.all_plurks.find({"_id": plurk_main['_id']}, {"_id": 0, "id": 1, "sha1": 1})
+                doc = conn.plurk.users.find({"_id": users[i]['_id']}, {"_id": 0, "id": 1, "sha1": 1})
                 for x in doc:
                     if sha1 == x['sha1']:
                         break
                     else:
-                        conn.plurk.all_plurks.delete_one({"_id": plurk_main['plurk_id']})
-                        plurk_main["sha1"] = sha1
-                        conn.plurk.all_plurks.insert_one(plurk_main)
+                        conn.plurk.users.delete_one({"_id": users[i]['id']})
+                        users[i]["sha1"] = sha1
+                        conn.plurk.users.insert_one(users[i])
+                    
             else:
-                plurk_main["_id"] = plurk_main['plurk_id']
-                sha1 = hashlib.sha1(str(plurk_main).encode('utf-8')).hexdigest()
-                plurk_main["sha1"] = sha1
-                conn.plurk.all_plurks.insert_one(plurk_main)
-        
-        print('ID: {} finished!'.format(j))
+                users[i]["_id"] = users[i]['id']
+                sha1 = hashlib.sha1(str(users[i]).encode('utf-8')).hexdigest()
+                users[i]["sha1"] = sha1
+                conn.plurk.users.insert_one(users[i])
+
+    if 'plurk' in data.keys():
+        plurk_ids = get_db_ids('plurk', 'all_plurks')
+        plurk_main = data['plurk']
+
+        if plurk_main['plurk_id'] in plurk_ids:
+            plurk_main["_id"] = plurk_main['plurk_id']
+            sha1 = hashlib.sha1(str(plurk_main).encode('utf-8')).hexdigest()
+
+            doc = conn.plurk.all_plurks.find({"_id": plurk_main['_id']}, {"_id": 0, "id": 1, "sha1": 1})
+            for x in doc:
+                if sha1 == x['sha1']:
+                    break
+                else:
+                    conn.plurk.all_plurks.delete_one({"_id": plurk_main['plurk_id']})
+                    plurk_main["sha1"] = sha1
+                    conn.plurk.all_plurks.insert_one(plurk_main)
+        else:
+            plurk_main["_id"] = plurk_main['plurk_id']
+            sha1 = hashlib.sha1(str(plurk_main).encode('utf-8')).hexdigest()
+            plurk_main["sha1"] = sha1
+            conn.plurk.all_plurks.insert_one(plurk_main)
+    
+    print('ID: {} finished!'.format(plurk_id))
 
 def get_response(plurk_id, from_response_id = 0):
     print("Starting crawling the responses of ID: {}".format(plurk_id))
@@ -180,14 +203,22 @@ def get_response(plurk_id, from_response_id = 0):
     print('ID: {} finished!'.format(plurk_id))
 
 def main():
-    id_list = get_anonymous_plurks()
-    for _ in range(10000):
-        if id_list:
-            min_number = min(id_list)
-            id_list = get_anonymous_plurks(min_number)
-        else:
-            logging.info('No other plurks!')
-            break
+    if len(sys.argv) == 2:
+        if sys.argv[1] == 'responses':
+            for i in range(1000000000, 1452000000):
+                crawler_responses(i)
+        elif sys.argv[1] == 'plurk':
+            for i in range(1000000000, 1452000000):
+                crawler_plurk(i)
+    elif len(sys.argv) == 1:
+        id_list = get_anonymous_plurks()
+        for _ in range(10000):
+            if id_list:
+                min_number = min(id_list)
+                id_list = get_anonymous_plurks(min_number)
+            else:
+                logging.info('No other plurks!')
+                break
 
 if __name__ == '__main__':
     api = PlurkAPI.fromfile('key/API.keys')
