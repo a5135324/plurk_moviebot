@@ -41,16 +41,6 @@ def convert_id_to_link(_id):
 
     return 'https://www.plurk.com/p/' + ''.join(link)
 
-def dump_db(db, collection, filename):
-    doc = conn[db][collection].find({})
-
-    with open(filename, 'w', encoding='utf-8') as w:
-        w.write('[')
-        for x in doc:
-            w.write(json.dumps(x, ensure_ascii=False))
-            w.write(',')
-        w.write(']')
-
 def crawler_responses(plurk_id, from_response_id = 0):
     print("Starting crawling the responses of ID: {}".format(plurk_id))
     url = 'https://www.plurk.com/Responses/get'
