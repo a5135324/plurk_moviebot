@@ -78,6 +78,7 @@ def get_anonymous_plurks(offset = 0, limit = 100):
     data = json.loads(r.text)
     pids = data["pids"]
     for plurk_id in pids:
+        crawler_responses(plurk_id)
         str_id = str(plurk_id)
         data[str_id]["_id"] = plurk_id
         sha1 = hashlib.sha1(str(data[str_id]).encode('utf-8')).hexdigest()
