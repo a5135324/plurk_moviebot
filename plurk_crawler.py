@@ -60,10 +60,11 @@ class Plurk(object):
     def convert_id_to_link(self):
         order = '0123456789abcdefghijklmnopqrstuvwxyz'
         link = []
-        while self.plurk_id:
-            _, mod = divmod(self.plurk_id, 36)
+        plurk_id = self.plurk_id
+        while plurk_id:
+            _, mod = divmod(plurk_id, 36)
             link.append(order[int(mod)])
-            self.plurk_id = (self.plurk_id-mod) / 36
+            plurk_id = (plurk_id-mod) / 36
         link.reverse()
 
         return 'https://www.plurk.com/p/' + ''.join(link)
