@@ -26,72 +26,47 @@ class PlurkUser(object):
 def message_format(plurk_id, ch, en, rel_time, intro, links):
     for t in range(0,len(ch),1):
         time.sleep(5)
-        content = '電影名稱 ： **' + ch[t] + '** (' + en[t] + ')\n' + rel_time[t] + '\n電影簡介 ： ' + intro[t][:200] + '\n' + links[t]
+        content = '電影名稱：**' + ch[t] + '** (' + en[t] + ')\n' + rel_time[t] + '\n電影簡介：' + intro[t][:200] + '\n' + links[t]
         print(content)
         #print(plurk_id)
+        #
         temp = plurk.callAPI('/APP/Responses/responseAdd', options={'plurk_id': plurk_id, 'content': content, 'qualifier':''})
         #print(temp)
         #print(content)
 
 def yahoo_movie_parser(url, plurk_id):
     r = requests.get(url)
-    soup = BeautifulSoup(r.text,'html.parser')
+    soup = BeautifulSoup(r.text, 'html.parser')
 
-    movie_name = soup.find_all('div', class_= "release_movie_name")
-    name_ch = []
-    for t in movie_name:
-        temp = t.find('a', class_='gabtn').text.replace('\n','').replace(' ','')
-        name_ch.append(temp)
-    name_en = []
-    for t in movie_name:
-        temp = t.find('div', class_='en').find('a').text.replace('\n','').replace(' ','', 20)
-        name_en.append(temp)
-    print(name_ch)
-    #print(name_en)
+    movie_name = soup.find_all("div", class_="release_movie_name")
+    ch_name = [i.find('a', class_='gabtn').text.replace('\n','').replace(' ','') for i in movie_name]
+    en_name = [i.find('div', class_='en').find('a').text.replace('\n','').replace(' ','', 20) for i in movie_name]
+    #print(ch_name)
+    #print(en_name)
 
-    movie_link = soup.find_all('div',class_="release_btn color_btnbox")
-    links = []
-    for t in movie_link:
-        if t.find('a', class_ = "gabtn"):
-            links.append(t.find('a',class_="gabtn")['href'])
-        else:
-            links.append('')
-    #print(links)
+    movie_link = [i.find('a', class_='gabtn')['href'] for i in movie_name]
+    #print(movie_link)
 
-    movie_time = soup.find_all('div', class_ = 'release_info_text')
-    release_time = []
-    for t in movie_time:
-        temp = t.find('div', class_ = 'release_movie_time').text
-        release_time.append(temp)
+    release_time = [i.text for i in soup.find_all('div', class_='release_movie_time')]
+    release_time = [i.replace(" ： ", "：") for i in release_time]
     #print(release_time)
 
-    movie_intro = soup.find_all('div',class_="release_text")
+    movie_info = [i.text.strip() for i in soup.find_all('div',class_="release_text")]
     intro = []
-    for t in movie_intro:
-        temp = t.find('span').text.replace('\r\n','').replace('\n','')
-        #time.sleep(5)
-        check = temp
+    for i in movie_info:
+        temp = i
         while True:
             a = temp.find('★')
             if a == -1:
                 break
-            b = temp.find('\xa0')
-            #print(a, b)
-            if ( b>a):
-                temp = temp.replace(temp[a:b], '', 1)
-            else:
-                temp = temp.replace(temp[b:a],'',1)
-            if check == temp:
-                break
-            else:
-                check = temp
-            #print(temp)
-        
-        #print(temp)
-        intro.append(temp.replace('\n','').replace('\r','').replace('\xa0',''))
+            b = temp.find('\r\n')
+            if (b > a):
+                temp = temp.replace(temp[a:b+2], '', 1)
+                
+        intro.append(temp.strip())
     #print(intro)
 
-    message_format(plurk_id, name_ch, name_en, release_time, intro, links)
+    message_format(plurk_id, ch_name, en_name, release_time, intro, movie_link)
 
 def get_next_page(url):
     r = requests.get(url)
@@ -106,7 +81,7 @@ def get_next_page(url):
         return None
 
 def post_movie():
-    temp = author.add_plurk('#movie #電影 #本週上映電影\n如果有出錯或是任何問題歡迎填[表單](https://forms.gle/EpDjFGGXouFVTiNk6)哦！','says')
+    temp = author.add_plurk('#movie #電影 #本週上映電影\n如果有出錯或是任何問題歡迎填[表單](https://forms.gle/EpDjFGGXouFVTiNk6)回報給作者！！','says')
     plurk_id = temp['plurk_id']
     #print(plurk_id)
     #temp = author.add_plurk('#test test message', 'says', '[15240921]')
