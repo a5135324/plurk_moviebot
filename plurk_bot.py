@@ -54,16 +54,14 @@ def yahoo_movie_parser(url, plurk_id):
     movie_info = [i.text.strip() for i in soup.find_all('div',class_="release_text")]
     intro = []
     for i in movie_info:
-        temp = i
-        while True:
-            a = temp.find('★')
-            if a == -1:
-                break
-            b = temp.find('\r\n')
-            if (b > a):
-                temp = temp.replace(temp[a:b+2], '', 1)
+        temp = i.split('\r\n')
+        intros = ''
+        for j in temp:
+            if j == '' or j.find('★') == 0 or j.find('【關於電影】') != -1 or j == '\xa0':
+                continue
+            intros += j
                 
-        intro.append(temp.strip())
+        intro.append(intros.strip())
     #print(intro)
 
     message_format(plurk_id, ch_name, en_name, release_time, intro, movie_link)
