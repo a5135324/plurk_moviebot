@@ -47,7 +47,7 @@ def plurk_message_format(plurk_id, ch_name, en_name, movie_link, release_time, i
             'qualifier': ''
         }
     )
-	time.sleep(2)
+    time.sleep(2)
 
 def movie_nextweek():
     temp = bot.add_plurk('#movie #電影 #本週上映電影\n如果有出錯或是任何問題歡迎填[表單](https://forms.gle/EpDjFGGXouFVTiNk6)回報給作者！！','says')
