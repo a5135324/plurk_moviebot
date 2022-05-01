@@ -65,8 +65,8 @@ def movie_nextweek():
             en_name = movie_name.find('div', class_='en').find('a').text.replace('\n','').replace(' ','', 20)
             movie_link = movie_name.find('a', class_='gabtn')['href']
             release_time = i.find('div', class_='release_movie_time').text.replace(" ： ", "：").strip().replace(' ','').replace('\n','')
-            movie_info = i.find('div',class_="release_text").replace('\n\n', '\r\n').text.strip()
-            temp = movie_info.split('\r\n')
+            movie_info = i.find('div',class_="release_text").text.strip()
+            temp = movie_info.replace('\n\n', '\r\n').split('\r\n')
             introduction = ''
             for j in temp:
                 if j == '' or j.find('★') == 0 or j.find('【關於電影】') != -1 or j == '\xa0':
